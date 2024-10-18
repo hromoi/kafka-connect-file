@@ -1,0 +1,67 @@
+version: '2.2'
+services:
+  kafka:
+    image: confluentinc/cp-kafka:7.0.1
+    environment:
+      KAFKA_PROCESS_ROLES: "broker,controller"
+      KAFKA_NODE_ID: 1
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@localhost:9093"
+      KAFKA_LISTENERS: "PLAINTEXT://localhost:9092,CONTROLLER://localhost:9093"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "PLAINTEXT"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_LOG_DIRS: "/var/lib/kafka/data"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      CLUSTER_ID: "5kMAozflR4ybvTAn_OtnQg"
+    ports:
+      - "9092:9092"
+    volumes:
+      - ./kafka-data:/var/lib/kafka/data
+
+  connect-validation:
+    image: confluentinc/cp-kafka-connect:7.0.1
+    environment:
+      CONNECT_BOOTSTRAP_SERVERS: "kafka:9092"
+      CONNECT_REST_ADVERTISED_HOST_NAME: "connect-validation"
+      CONNECT_GROUP_ID: "compose-connect-group-validation"
+      CONNECT_CONFIG_STORAGE_TOPIC: "docker-connect-configs-validation"
+      CONNECT_OFFSET_STORAGE_TOPIC: "docker-connect-offsets-validation"
+      CONNECT_STATUS_STORAGE_TOPIC: "docker-connect-status-validation"
+      CONNECT_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_CONFIG_PROVIDERS: "file"
+      CONNECT_CONFIG_PROVIDERS_FILE_CLASS: "org.apache.kafka.common.config.provider.FileConfigProvider"
+      CONNECT_CONFIG_PROVIDERS_FILE_PARAM_PATH: "/etc/kafka-connect/config"
+      CONNECT_PLUGIN_PATH: "/usr/share/java,/usr/share/kafka/plugins"
+    ports:
+      - "8083:8083"
+    volumes:
+      - ./config.properties:/etc/kafka-connect/config/config.properties
+      - ./plugins:/usr/share/kafka/plugins
+      - ./source-directory:/path/to/source-directory
+      - ./valid-directory:/path/to/valid-directory
+      - ./invalid-directory:/path/to/invalid-directory
+
+  connect-parsing:
+    image: confluentinc/cp-kafka-connect:7.0.1
+    environment:
+      CONNECT_BOOTSTRAP_SERVERS: "kafka:9092"
+      CONNECT_REST_ADVERTISED_HOST_NAME: "connect-parsing"
+      CONNECT_GROUP_ID: "compose-connect-group-parsing"
+      CONNECT_CONFIG_STORAGE_TOPIC: "docker-connect-configs-parsing"
+      CONNECT_OFFSET_STORAGE_TOPIC: "docker-connect-offsets-parsing"
+      CONNECT_STATUS_STORAGE_TOPIC: "docker-connect-status-parsing"
+      CONNECT_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_CONFIG_PROVIDERS: "file"
+      CONNECT_CONFIG_PROVIDERS_FILE_CLASS: "org.apache.kafka.common.config.provider.FileConfigProvider"
+      CONNECT_CONFIG_PROVIDERS_FILE_PARAM_PATH: "/etc/kafka-connect/config"
+      CONNECT_PLUGIN_PATH: "/usr/share/java,/usr/share/kafka/plugins"
+    ports:
+      - "8084:8083"
+    volumes:
+      - ./config.properties:/etc/kafka-connect/config/config.properties
+      - ./plugins:/usr/share/kafka/plugins
+      - ./valid-directory:/path/to/valid-directory
+      - ./processed-directory:/path/to/processed-directory

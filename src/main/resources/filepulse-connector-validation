@@ -1,0 +1,23 @@
+name=filepulse-connector-validation
+connector.class=io.streamthoughts.kafka.connect.filepulse.source.FilePulseSourceConnector
+tasks.max=5
+fs.scan.directory.path=/path/to/source-directory
+fs.cleanup.policy=COMPOSED
+tasks.file.status.storage.class=io.streamthoughts.kafka.connect.filepulse.storage.DefaultFileObjectKeyValueStorage
+internal.kafka.reporter.bootstrap.servers=localhost:9092
+internal.kafka.reporter.topic=filepulse-status-validation
+
+filters=CheckFilenamePattern,MyValidation
+filters.CheckFilenamePattern.type=io.streamthoughts.kafka.connect.filepulse.filter.RegexFilter
+filters.CheckFilenamePattern.pattern=${file:config.properties:filename.pattern}
+filters.CheckFilenamePattern.exclude.matches=true
+filters.CheckFilenamePattern.target.metadata=status=INVALID
+
+filters.MyValidation.type=com.example.MyValidationProcessor
+filters.MyValidation.config.file=${file:config.properties:path}
+
+fs.policy.composed.routes=VALID,INVALID
+fs.policy.composed.route.VALID.condition=${metadata.status} == 'VALID'
+fs.policy.composed.route.VALID.target.path=/path/to/valid-directory
+fs.policy.composed.route.INVALID.condition=${metadata.status} == 'INVALID'
+fs.policy.composed.route.INVALID.target.path=/path/to/invalid-directory
